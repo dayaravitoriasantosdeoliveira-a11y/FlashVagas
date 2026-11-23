@@ -49,8 +49,8 @@ async function loadOpportunities(){
         action='<button class="secondary-btn" disabled>Em análise</button>';
         stateText='Sua candidatura está em análise.'; stateClass='pending';
       }else if(mine==='rejected'){
-        action='<button class="secondary-btn" disabled>Não selecionado</button>';
-        stateText='Esta candidatura não foi selecionada.'; stateClass='rejected';
+        action=`<button class="secondary-btn apply-btn" data-id="${esc(o.id)}">Candidatar-se novamente →</button>`;
+        stateText='Sua candidatura anterior não foi selecionada. Você pode tentar novamente.'; stateClass='rejected';
       }else if(state==='in_progress'){
         action='<button class="secondary-btn" disabled>Em andamento</button>';
         stateText='As vagas desta atividade já foram preenchidas.'; stateClass='in-progress';
