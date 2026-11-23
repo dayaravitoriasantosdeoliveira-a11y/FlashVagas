@@ -62,14 +62,13 @@ async function loadApplications(){
   const {data:completedRows}=await supabaseClient.rpc('eduwork_get_completed_application_ids_v2');
   const completedSet=new Set((completedRows||[]).map(c=>String(c.application_id)));
   const normalized=(data||[]).map(a=>completedSet.has(String(a.id))?{...a,status:'completed'}:a);
-  const rows=normalized.filter(a=>String(a.status||'').toLowerCase()!=='completed');
+  const rows=normalized.filter(a=>!['completed','rejected'].includes(String(a.status||'').toLowerCase()));
   if(!rows.length){const emptyHTML='<div class="empty-state">Ainda não há candidaturas.</div>';if(box.innerHTML!==emptyHTML)box.innerHTML=emptyHTML;box.dataset.loaded='true';return;}
   const labels={pending:'Em análise',approved:'Selecionado',rejected:'Não selecionado',completed:'Concluída'};
   const nextHTML=rows.map(a=>{
     const skillHtml=skills(a.competencies).map(x=>`<span class="skill-chip">${esc(x)}</span>`).join('');
     const approved=a.status==='approved';
-    const active=a.status==='approved';
-    return `<article class="admin-application application-mural">
+        return `<article class="admin-application application-mural">
       <div class="student-summary"><div class="chat-avatar">${esc((a.nome||'E').charAt(0).toUpperCase())}</div><div><strong>${esc(a.nome||'Estudante')}</strong><small>${esc(a.turma||'Turma não informada')} · ${esc(a.email||'')}</small><small>Atividade: ${esc(a.titulo||'Oportunidade')}</small></div></div>
       <div class="candidate-profile-preview"><div><h4>Sobre o estudante</h4><p>${esc(a.bio||'O estudante ainda não adicionou uma descrição sobre si.')}</p></div><div><h4>Competências</h4><div class="skills-wrap">${skillHtml||'<span class="muted">Nenhuma competência cadastrada.</span>'}</div></div></div>
       <div class="candidate-actions"><span class="status-pill ${esc(a.status||'pending')}">${labels[a.status]||'Em análise'}</span>${a.resume_path?`<span class="resume-attached">${esc(a.resume_filename||'Currículo anexado')}</span><button class="secondary-btn resume-student" data-path="${esc(a.resume_path)}">Ver currículo</button>`:'<span class="muted">Sem currículo anexado</span>'}<button class="secondary-btn chat-student" data-id="${esc(a.student_id)}">Conversar</button>${approved?`<button class="complete-btn" data-id="${esc(a.id)}">✓ Finalizar trabalho e emitir certificado</button>`:''}<button class="approve-btn" data-id="${esc(a.id)}" ${approved||a.status==='completed'?'disabled':''}>✓ ${approved?'Selecionado':'Selecionar'}</button><button class="reject-btn" data-id="${esc(a.id)}" ${a.status==='rejected'||a.status==='completed'?'disabled':''}>✕ ${a.status==='rejected'?'Não selecionado':'Recusar'}</button></div>
@@ -96,8 +95,8 @@ async function changeApplicationStatus(id,status){
     data=result.data; error=result.error;
   }
   if(error){console.error('Atualização candidatura:',error);showToast(error.message||'Não foi possível atualizar a candidatura.','error');return;}
-  if(data?.success===false){showToast(data.message||'Não foi possível atualizar.','error');return;}
-  showToast(status==='completed'?'Certificado emitido com sucesso.':(data?.message||'Candidatura atualizada.'));if(status==='completed'){window.dispatchEvent(new CustomEvent('eduwork:activity-completed'));}
+  if(data?.success===false){showToast(data.message||'Não foi possível atualizar.','error');return;}if(data?.success!==true){showToast('O banco não confirmou a alteração. Atualize a página e tente novamente.','error');return;}
+  showToast(status==='completed'?'Certificado emitido com sucesso.':status==='rejected'?'Candidatura recusada e retirada da lista.':'Estudante selecionado com sucesso.');if(status==='completed'){window.dispatchEvent(new CustomEvent('eduwork:activity-completed'));}
   await Promise.all([loadApplications(),loadStats(),loadOpportunities(),loadStudents()]);
 }
 
