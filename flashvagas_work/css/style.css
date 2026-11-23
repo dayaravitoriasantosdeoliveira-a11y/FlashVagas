@@ -1833,3 +1833,9 @@ html::-webkit-scrollbar, body::-webkit-scrollbar, .edu-sidebar::-webkit-scrollba
     transition: none !important;
   }
 }
+
+
+/* V83 — remoção global de reflexos/brilhos em cards e caixas */
+.quick-card::before,.quick-card::after,.opportunity-card::before,.opportunity-card::after,.certificate-card::before,.certificate-card::after,.admin-application::before,.admin-application::after,.candidate-card::before,.candidate-card::after,.stat-card::before,.stat-card::after,.info-card::before,.info-card::after,.section-block::before,.section-block::after,.content-card::before,.content-card::after { content:none !important; background-image:none !important; box-shadow:none !important; opacity:0 !important; }
+.quick-card,.opportunity-card,.certificate-card,.admin-application,.candidate-card,.stat-card,.info-card,.section-block,.content-card { background-image:none !important; }
+.quick-card:hover,.opportunity-card:hover,.certificate-card:hover,.admin-application:hover,.candidate-card:hover,.stat-card:hover,.info-card:hover,.section-block:hover,.content-card:hover { filter:none !important; transform:none !important; }
