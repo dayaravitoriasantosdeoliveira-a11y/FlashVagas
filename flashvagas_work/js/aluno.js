@@ -21,17 +21,19 @@ function fillProfile(p){
 async function loadOpportunities(){
   const box=$('opportunityList');
   if(!box)return;
-  box.innerHTML='<div class="empty-state">Carregando oportunidades...</div>';
+  if(box.dataset.loaded!=='true') box.innerHTML='<div class="empty-state">Carregando oportunidades...</div>';
   try{
     const {data,error}=await timeout(supabaseClient.rpc('get_student_opportunities_v3'),10000);
     if(error)throw error;
     const rows=(data||[]).filter(o=>!['deleted','removed','archived','cancelled','canceled'].includes(String(o.state||o.status||'').trim().toLowerCase()));
     $('statOpportunities').textContent=String(rows.filter(o=>o.state!=='completed').length);
     if(!rows.length){
-      box.innerHTML='<div class="empty-state"><strong>Nenhuma oportunidade disponível no momento.</strong><small>Quando a Coordenação publicar uma nova atividade, ela aparecerá aqui.</small></div>';
+      const emptyHTML='<div class="empty-state"><strong>Nenhuma oportunidade disponível no momento.</strong><small>Quando a Coordenação publicar uma nova atividade, ela aparecerá aqui.</small></div>';
+      if(box.innerHTML!==emptyHTML) box.innerHTML=emptyHTML;
+      box.dataset.loaded='true';
       return;
     }
-    box.innerHTML=rows.map(o=>{
+    const nextHTML=rows.map(o=>{
       const state=String(o.state||'open');
       const mine=String(o.student_status||'');
       let action='';
@@ -57,12 +59,18 @@ async function loadOpportunities(){
       }
       return `<article class="opportunity-card ${stateClass}"><div class="opp-top"><span class="tag">${esc(o.setor||'Oportunidade')}</span><span class="opp-date">${date(o.data)}</span></div><h3>${esc(o.titulo||'Oportunidade')}</h3><p>${esc(o.descricao||'')}</p><div class="opp-meta"><span>Vagas: ${Number(o.vagas||1)} vaga(s)</span><span>Publicado em ${date(o.criado_em)}</span>${o.remuneracao?`<span>Remuneração: ${esc(o.remuneracao)}</span>`:''}</div>${stateText?`<div class="opp-state ${stateClass}">${esc(stateText)}</div>`:''}${action}</article>`;
     }).join('');
-    box.querySelectorAll('.apply-btn').forEach(btn=>btn.addEventListener('click',()=>apply(btn)));
+    if(box.innerHTML!==nextHTML){
+      box.innerHTML=nextHTML;
+      box.querySelectorAll('.apply-btn').forEach(btn=>btn.addEventListener('click',()=>apply(btn)));
+    }
+    box.dataset.loaded='true';
     await loadApplications();
   }catch(e){
     console.error('EduWork oportunidades:',e);
     $('statOpportunities').textContent='0';
-    box.innerHTML=`<div class="empty-state"><strong>Não foi possível carregar as oportunidades.</strong><small>${esc(e?.message||'Verifique a conexão com o Supabase.')}</small></div>`;
+    const errorHTML=`<div class="empty-state"><strong>Não foi possível carregar as oportunidades.</strong><small>${esc(e?.message||'Verifique a conexão com o Supabase.')}</small></div>`;
+    if(box.innerHTML!==errorHTML) box.innerHTML=errorHTML;
+    box.dataset.loaded='true';
   }
 }
 
@@ -81,7 +89,7 @@ async function apply(b){
       throw new Error(data.message||'Não foi possível enviar a candidatura.');
     }
     if(data?.success===true && data.already_applied){b.textContent='Candidatura enviada ✓';}else{b.textContent='Em análise ✓';}
-    await Promise.all([loadApplications(),loadStats(),loadOpportunities()]);
+    await Promise.all([loadStats(),loadOpportunities()]);
   }catch(e){
     console.error('Candidatura:',e);
     b.disabled=false;b.textContent='Tentar novamente';
@@ -109,10 +117,12 @@ async function loadApplications(){
     }
     window.studentApplications=apps;
     $('statApplications').textContent=String(apps.filter(a=>['pending','approved'].includes(String(a.status||'').toLowerCase())).length);
-    if(!apps.length){box.innerHTML=empty('Você ainda não enviou nenhuma candidatura.');return;}
+    if(!apps.length){const emptyHTML=empty('Você ainda não enviou nenhuma candidatura.');if(box.innerHTML!==emptyHTML)box.innerHTML=emptyHTML;box.dataset.loaded='true';return;}
     const labels={pending:'Em análise',approved:'Selecionado',rejected:'Não selecionada',completed:'Concluída'};
-    box.innerHTML=apps.map(a=>`<article class="list-row"><div><strong>${esc(a.titulo||'Oportunidade')}</strong><small>${esc(a.setor||'')} · ${date(a.criado_em)}</small></div><span class="status-pill ${esc(String(a.status||'pending').toLowerCase())}">${labels[String(a.status||'pending').toLowerCase()]||'Em análise'}</span></article>`).join('');
-  }catch(e){console.error('Candidaturas:',e);window.studentApplications=[];box.innerHTML=empty('Não foi possível carregar suas candidaturas.');}
+    const nextHTML=apps.map(a=>`<article class="list-row"><div><strong>${esc(a.titulo||'Oportunidade')}</strong><small>${esc(a.setor||'')} · ${date(a.criado_em)}</small></div><span class="status-pill ${esc(String(a.status||'pending').toLowerCase())}">${labels[String(a.status||'pending').toLowerCase()]||'Em análise'}</span></article>`).join('');
+    if(box.innerHTML!==nextHTML)box.innerHTML=nextHTML;
+    box.dataset.loaded='true';
+  }catch(e){console.error('Candidaturas:',e);window.studentApplications=[];const errorHTML=empty('Não foi possível carregar suas candidaturas.');if(box.innerHTML!==errorHTML)box.innerHTML=errorHTML;box.dataset.loaded='true';}
 }
 
 async function loadCertificates(){
@@ -304,7 +314,7 @@ function setupUI(){
 async function setupRealtime(){
   supabaseClient.channel(`notifications-${currentProfile.id}`).on('postgres_changes',{event:'INSERT',schema:'public',table:'notifications',filter:`user_id=eq.${currentProfile.id}`},()=>{loadNotifications();loadCertificates();loadStats();}).subscribe();
   supabaseClient.channel(`opportunities-student-${currentProfile.id}`).on('postgres_changes',{event:'*',schema:'public',table:'opportunities'},()=>loadOpportunities()).subscribe();
-  window.__studentChatPoll=setInterval(()=>{if(selectedCoordinator)loadChat();loadApplications();},6000);
+  window.__studentChatPoll=setInterval(()=>{if(document.visibilityState!=='visible')return;if(selectedCoordinator)loadChat();loadApplications();},30000);
   supabaseClient.channel(`applications-student-${currentProfile.id}`).on('postgres_changes',{event:'*',schema:'public',table:'applications',filter:`student_id=eq.${currentProfile.id}`},()=>{loadApplications();loadStats();}).subscribe();
 }
 
