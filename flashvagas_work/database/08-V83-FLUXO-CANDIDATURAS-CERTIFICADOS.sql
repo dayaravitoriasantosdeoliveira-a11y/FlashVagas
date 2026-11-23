@@ -54,7 +54,7 @@ begin
   update public.applications
      set status = v_status
    where id = p_application_id
-     and (status::text = 'pending' or (v_status = 'approved' and status::text = 'approved'));
+     and status::text in ('pending','approved');
 
   if not found then
     return jsonb_build_object('success',false,'message','Esta candidatura não está mais aguardando análise.');
