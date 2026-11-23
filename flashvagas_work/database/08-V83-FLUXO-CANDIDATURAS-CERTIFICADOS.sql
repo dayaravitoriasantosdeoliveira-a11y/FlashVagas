@@ -3,6 +3,10 @@
 -- Mantém os estados compatíveis com a constraint: pending / approved / rejected.
 -- A conclusão é registrada em applications.concluido_em (certificado emitido automaticamente).
 
+-- Garante que a coluna usada pelo fluxo de certificados exista mesmo em instalações antigas.
+alter table public.applications
+  add column if not exists concluido_em timestamptz;
+
 create or replace function public.set_application_status_v43(
   p_application_id uuid,
   p_status text
