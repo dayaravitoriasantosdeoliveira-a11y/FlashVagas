@@ -46,7 +46,7 @@ async function saveEditedOpportunity(e){e.preventDefault();const id=$('editOppId
 
 async function loadApplications(){
   const box=$('coordApplicationList'); if(!box)return;
-  box.innerHTML='<div class="empty-state">Carregando candidaturas...</div>';
+  if(box.dataset.loaded!=='true')box.innerHTML='<div class="empty-state">Carregando candidaturas...</div>';
   let {data,error}=await supabaseClient.rpc('get_coordinator_applications_v2');
   if(error){
     console.warn('RPC get_coordinator_applications_v2 indisponível; usando consulta direta:',error.message);
@@ -63,9 +63,9 @@ async function loadApplications(){
   const completedSet=new Set((completedRows||[]).map(c=>String(c.application_id)));
   const normalized=(data||[]).map(a=>completedSet.has(String(a.id))?{...a,status:'completed'}:a);
   const rows=normalized.filter(a=>String(a.status||'').toLowerCase()!=='completed');
-  if(!rows.length){box.innerHTML='<div class="empty-state">Ainda não há candidaturas.</div>';return;}
+  if(!rows.length){const emptyHTML='<div class="empty-state">Ainda não há candidaturas.</div>';if(box.innerHTML!==emptyHTML)box.innerHTML=emptyHTML;box.dataset.loaded='true';return;}
   const labels={pending:'Em análise',approved:'Selecionado',rejected:'Não selecionado',completed:'Concluída'};
-  box.innerHTML=rows.map(a=>{
+  const nextHTML=rows.map(a=>{
     const skillHtml=skills(a.competencies).map(x=>`<span class="skill-chip">${esc(x)}</span>`).join('');
     const approved=a.status==='approved';
     const active=a.status==='approved';
@@ -75,10 +75,14 @@ async function loadApplications(){
       <div class="candidate-actions"><span class="status-pill ${esc(a.status||'pending')}">${labels[a.status]||'Em análise'}</span>${a.resume_path?`<span class="resume-attached">${esc(a.resume_filename||'Currículo anexado')}</span><button class="secondary-btn resume-student" data-path="${esc(a.resume_path)}">Ver currículo</button>`:'<span class="muted">Sem currículo anexado</span>'}<button class="secondary-btn chat-student" data-id="${esc(a.student_id)}">Conversar</button>${approved?`<button class="complete-btn" data-id="${esc(a.id)}">✓ Finalizar trabalho e emitir certificado</button>`:''}<button class="approve-btn" data-id="${esc(a.id)}" ${approved||a.status==='completed'?'disabled':''}>✓ ${approved?'Selecionado':'Selecionar'}</button><button class="reject-btn" data-id="${esc(a.id)}" ${a.status==='rejected'||a.status==='completed'?'disabled':''}>✕ ${a.status==='rejected'?'Não selecionado':'Recusar'}</button></div>
     </article>`;
   }).join('');
-  box.querySelectorAll('.approve-btn').forEach(b=>b.addEventListener('click',()=>changeApplicationStatus(b.dataset.id,'approved')));box.querySelectorAll('.complete-btn').forEach(b=>b.addEventListener('click',()=>changeApplicationStatus(b.dataset.id,'completed')));
-  box.querySelectorAll('.reject-btn').forEach(b=>b.addEventListener('click',()=>changeApplicationStatus(b.dataset.id,'rejected')));
-  box.querySelectorAll('.resume-student').forEach(b=>b.addEventListener('click',()=>openStudentResume(b.dataset.path)));
-  box.querySelectorAll('.chat-student').forEach(b=>b.addEventListener('click',()=>openApplicantChat(b.dataset.id)));
+  if(box.innerHTML!==nextHTML){
+    box.innerHTML=nextHTML;
+    box.querySelectorAll('.approve-btn').forEach(b=>b.addEventListener('click',()=>changeApplicationStatus(b.dataset.id,'approved')));box.querySelectorAll('.complete-btn').forEach(b=>b.addEventListener('click',()=>changeApplicationStatus(b.dataset.id,'completed')));
+    box.querySelectorAll('.reject-btn').forEach(b=>b.addEventListener('click',()=>changeApplicationStatus(b.dataset.id,'rejected')));
+    box.querySelectorAll('.resume-student').forEach(b=>b.addEventListener('click',()=>openStudentResume(b.dataset.path)));
+    box.querySelectorAll('.chat-student').forEach(b=>b.addEventListener('click',()=>openApplicantChat(b.dataset.id)));
+  }
+  box.dataset.loaded='true';
 }
 async function changeApplicationStatus(id,status){
   const label=status==='approved'?'selecionar':status==='completed'?'emitir o certificado':'recusar';
@@ -114,9 +118,12 @@ async function loadStudents(){
   if(selectedStudent)applicantIds.add(selectedStudent.id);
   const data=students.filter(s=>applicantIds.has(s.id));
   window.coordStudents=data;
-  $('studentList').innerHTML=data.length?data.map(s=>`<div class="chat-contact-row"><button class="chat-contact ${selectedStudent?.id===s.id?'active':''}" data-id="${esc(s.id)}"><span class="chat-avatar">${esc((s.nome||'E').charAt(0).toUpperCase())}</span><span class="chat-contact-identity"><strong>${esc(s.nome||'Estudante')}</strong><small class="chat-role-label">Estudante</small>${s.turma?`<small class="chat-class-label">${esc(s.turma)}</small>`:''}</span></button>${s.resume_path?`<button class="text-btn view-student-resume" data-path="${esc(s.resume_path)}">Currículo</button>`:''}</div>`).join(''):'<div class="chat-empty">Os estudantes que se candidataram ou enviaram mensagem aparecerão aqui.</div>';
-  $('studentList').querySelectorAll('.chat-contact').forEach(b=>b.addEventListener('click',()=>selectStudent(data.find(s=>String(s.id)===String(b.dataset.id)))));
-  $('studentList').querySelectorAll('.view-student-resume').forEach(b=>b.addEventListener('click',()=>openStudentResume(b.dataset.path)));
+  const studentHTML=data.length?data.map(s=>`<div class="chat-contact-row"><button class="chat-contact ${selectedStudent?.id===s.id?'active':''}" data-id="${esc(s.id)}"><span class="chat-avatar">${esc((s.nome||'E').charAt(0).toUpperCase())}</span><span class="chat-contact-identity"><strong>${esc(s.nome||'Estudante')}</strong><small class="chat-role-label">Estudante</small>${s.turma?`<small class="chat-class-label">${esc(s.turma)}</small>`:''}</span></button>${s.resume_path?`<button class="text-btn view-student-resume" data-path="${esc(s.resume_path)}">Currículo</button>`:''}</div>`).join(''):'<div class="chat-empty">Os estudantes que se candidataram ou enviaram mensagem aparecerão aqui.</div>';
+  if($('studentList').innerHTML!==studentHTML){
+    $('studentList').innerHTML=studentHTML;
+    $('studentList').querySelectorAll('.chat-contact').forEach(b=>b.addEventListener('click',()=>selectStudent(data.find(s=>String(s.id)===String(b.dataset.id)))));
+    $('studentList').querySelectorAll('.view-student-resume').forEach(b=>b.addEventListener('click',()=>openStudentResume(b.dataset.path)));
+  }
 }
 async function selectStudent(s){if(!s)return;selectedStudent=s;$('chatHeader').innerHTML=`<span class="chat-avatar">${esc((s.nome||'E').charAt(0).toUpperCase())}</span><div class="chat-header-identity"><strong>${esc(s.nome||'Estudante')}</strong><small class="chat-role-label">Estudante</small>${s.turma?`<small class="chat-class-label">${esc(s.turma)}</small>`:''}</div>`;$('chatInput').disabled=false;$('chatForm').querySelector('button[type="submit"]').disabled=false;await loadChat();await subscribeChat();await loadStudents();}
 function chatText(m){return m.apagada?'Mensagem apagada':(m.mensagem||'');}
@@ -135,7 +142,7 @@ async function deleteAllMessages(){if(!selectedStudent)return;if(!confirm('Apaga
 async function sendNotice(e){e.preventDefault();const title=$('noticeTitle').value.trim(),message=$('noticeMessage').value.trim(),status=$('noticeMessageStatus');status.textContent='Enviando...';const {data,error}=await supabaseClient.rpc('send_notice_v2',{p_titulo:title,p_mensagem:message});if(error){status.textContent=`Não foi possível enviar: ${error.message}`;return;}if(data?.success===false){status.textContent=data.message||'Não foi possível enviar o aviso.';return;}status.textContent=`Aviso enviado para ${data?.count||0} estudante(s)!`;e.target.reset();}
 
 async function setupRealtime(){
-  window.__coordPoll=setInterval(()=>{loadStudents();loadApplications();if(selectedStudent)loadChat();},6000);
+  window.__coordPoll=setInterval(()=>{if(document.visibilityState!=='visible')return;loadStudents();loadApplications();if(selectedStudent)loadChat();},30000);
   coordInboxChannel=supabaseClient.channel(`coord-inbox-${coordProfile.id}`).on('postgres_changes',{event:'INSERT',schema:'public',table:'messages',filter:`destinatario_id=eq.${coordProfile.id}`},()=>{loadStudents();loadApplications();}).subscribe();
   supabaseClient.channel(`coord-applications-${coordProfile.id}`).on('postgres_changes',{event:'*',schema:'public',table:'applications'},()=>{loadApplications();loadStudents();loadStats();}).subscribe();
 }
