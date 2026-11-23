@@ -1,0 +1,30 @@
+EDUWORK / FLASHVAGAS — V76 MENTA GLASS
+
+Esta versão parte do pacote V75 disponível nesta conversa.
+
+VISUAL V76
+- Identidade menta inspirada na referência Recenter: fundos luminosos, brilho verde suave, amarelo-limão, superfícies translúcidas e verde profundo.
+- Sobrescrita global da paleta antiga para reduzir mistura de cores.
+- Perfil, cartões e publicações com limites de largura, quebra de linha e centralização.
+- Chat com balões arredondados e horário no fuso de São Paulo; controles de emoji ocultos.
+
+COMO ABRIR
+1. Extraia a pasta flashvagas_work.
+2. Abra index.html com Live Server.
+3. Faça uma atualização forçada (Ctrl+Shift+R).
+
+ERRO DO PRINT: FATAL 28P01 / password authentication failed for user postgres
+Esse erro acontece antes de o SQL ser executado: o Supabase não conseguiu autenticar a conexão do banco. Não é corrigido alterando o JavaScript ou repetindo o script.
+
+Para resolver com segurança:
+1. Entre no painel do Supabase e confirme que está no projeto correto e que ele está ativo.
+2. Abra Project Settings > Database.
+3. Se a senha do banco foi perdida ou não corresponde, use Reset database password e defina uma nova senha forte. Não envie essa senha em conversas nem a coloque no arquivo config.js.
+4. Volte ao SQL Editor, atualize a página e tente executar o SQL novamente. Se usar uma conexão externa/cliente SQL, atualize a senha salva nesse cliente.
+5. A chave anon/public usada pelo site não é a senha postgres; não substitua uma pela outra.
+
+IMPORTANTE SOBRE CANDIDATURAS
+O arquivo database/05-V75-CANDIDATURAS.sql cria a função submit_application_v3. Ele só poderá ser executado depois que a conexão do SQL Editor voltar a funcionar. A estrutura da tabela applications precisa ter student_id e opportunity_id, como o código espera. Se aparecer um novo erro SQL depois de resolver o 28P01, envie o texto exato do novo erro (sem senhas ou chaves).
+
+VALIDAÇÃO
+Os arquivos JavaScript foram verificados sintaticamente e o ZIP foi verificado estruturalmente. Não foi possível testar operações reais no projeto Supabase da escola, pois isso exige acesso autenticado ao banco e às contas de teste.

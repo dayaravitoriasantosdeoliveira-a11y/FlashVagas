@@ -1,0 +1,9 @@
+FATAL 28P01 / password authentication failed for user postgres
+Esse erro acontece antes de o SQL ser executado: o Supabase não conseguiu autenticar a conexão do banco. Não é corrigido alterando o JavaScript ou repetindo o script.
+
+Para resolver com segurança:
+1. Entre no painel do Supabase e confirme que está no projeto correto e que ele está ativo.
+2. Abra Project Settings > Database.
+3. Se a senha do banco foi perdida ou não corresponde, use Reset database password e defina uma nova senha forte. Não envie essa senha em conversas nem a coloque no arquivo config.js.
+4. Volte ao SQL Editor, atualize a página e tente executar o SQL novamente. Se usar uma conexão externa/cliente SQL, atualize a senha salva nesse cliente.
+5. A chave anon/public usada pelo site não é a senha postgres; não substitua uma pela outra.

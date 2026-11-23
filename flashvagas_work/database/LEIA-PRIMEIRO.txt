@@ -1,0 +1,14 @@
+EDUWORK — REDESIGN V47
+
+1. O código do site foi redesenhado mantendo HTML + CSS + JavaScript Vanilla + Supabase.
+2. O certificado foi simplificado: a conclusão é registrada na coluna applications.concluido_em.
+3. A emissão não usa a tabela certificates antiga e não insere nada nela.
+4. No Supabase, execute SOMENTE database/00-INSTALAR-FINAL.sql uma vez.
+5. O último resultado deve aparecer como: EDUWORK_CERTIFICADO_SIMPLES_OK
+6. Depois abra index.html pelo Live Server.
+
+Não execute SQL antigo de versões anteriores junto com este arquivo.
+Não é necessário criar policies novas para o certificado neste arquivo.
+
+ATUALIZAÇÃO V81.3:
+Antes de testar Remover vaga, execute uma vez o arquivo 07-V81-REMOVER-VAGAS.sql no Supabase > SQL Editor. Ele mantém as opções antigas da constraint oportunidades_status_v44 e permite o status 'deleted'.
