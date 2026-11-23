@@ -1776,3 +1776,60 @@ html::-webkit-scrollbar, body::-webkit-scrollbar, .edu-sidebar::-webkit-scrollba
   .chat-bubble{width:85%;max-width:85%}
   .chat-contact-row .chat-contact{height:88px;min-height:88px}
 }
+
+
+/* V82 — movimentos discretos, sem reflexos nos cards e balões */
+.quick-card::after,
+.opportunity-card::after,
+.certificate-card::after {
+  content: none !important;
+  display: none !important;
+}
+.quick-card:hover,
+.opportunity-card:hover,
+.certificate-card:hover,
+.stat-card:hover,
+.list-row:hover,
+.chat-bubble:hover,
+.message-card:hover,
+.admin-application:hover,
+.candidate-card:hover,
+.chat-contact:hover {
+  transform: none !important;
+  filter: none !important;
+}
+.quick-card:hover,
+.opportunity-card:hover,
+.certificate-card:hover,
+.stat-card:hover,
+.message-card:hover,
+.admin-application:hover,
+.candidate-card:hover {
+  box-shadow: inherit;
+}
+.primary-btn:hover,
+.secondary-btn:hover,
+.ghost-btn:hover,
+.icon-btn:hover,
+.google-btn:hover {
+  filter: none !important;
+  transform: none !important;
+}
+.app-page .story-reveal {
+  opacity: 0 !important;
+  transform: translate3d(0, 22px, 0) !important;
+  transition: opacity .65s ease, transform .65s cubic-bezier(.2,.75,.2,1) !important;
+  transition-delay: var(--story-delay, 0ms) !important;
+}
+.app-page .story-reveal.story-visible {
+  opacity: 1 !important;
+  transform: translate3d(0,0,0) !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .app-page .story-reveal,
+  .app-page .story-reveal.story-visible {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
